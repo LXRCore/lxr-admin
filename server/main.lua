@@ -147,6 +147,7 @@ end)
 LXR.RPC.Register('lxr-admin:me', function(src, tool, on)
     if limited(src) then return false, 'rate' end
     if not may(src, tool) then return false, 'denied' end
+    if tool == 'noclip' or tool == 'god' or tool == 'invisible' then Player(src).state:set('staff_' .. tool, on == true, true) end   -- lxr-warden reads these
     log(src, tool, src, on and 'on' or 'off')
     return true
 end)

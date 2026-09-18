@@ -18,7 +18,8 @@ logged with who did what to whom.
   announce to everyone, set weather, set or freeze time.
 * **Me** — no clip (`/noclip` too), godmode, invisible; teleport to the
   waypoint or to coordinates. Each switch is confirmed and logged by the
-  server first.
+  server first and mirrored in `Player(src).state.staff_<tool>` so
+  lxr-warden does not strike staff for it.
 * **Ban book** — the core's `bans` table, newest first; lift a ban.
 * **Tiers** — `Config.Access` maps every action to a group from
   `Config.Server.permissions`; a tier includes every group above it.
