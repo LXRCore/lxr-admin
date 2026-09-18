@@ -1,186 +1,164 @@
---[[
-    ██╗     ██╗  ██╗██████╗       █████╗ ██████╗ ███╗   ███╗██╗███╗   ██╗
-    ██║     ╚██╗██╔╝██╔══██╗     ██╔══██╗██╔══██╗████╗ ████║██║████╗  ██║
-    ██║      ╚███╔╝ ██████╔╝     ███████║██║  ██║██╔████╔██║██║██╔██╗ ██║
-    ██║      ██╔██╗ ██╔══██╗     ██╔══██║██║  ██║██║╚██╔╝██║██║██║╚██╗██║
-    ███████╗██╔╝ ██╗██║  ██║     ██║  ██║██████╔╝██║ ╚═╝ ██║██║██║ ╚████║
-    ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝     ╚═╝  ╚═╝╚═════╝ ╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝
+--[[ ═══════════════════════════════════════════════════════════════════════════
+     LXR-ADMIN — Server: every action checked and logged here
+     © 2026 iBoss21 / LXRCore — All Rights Reserved
+     ═══════════════════════════════════════════════════════════════════════════ ]]
 
-    🐺 LXR Admin Menu — Server-Side Logic
+local LXRCore = exports['lxr-core']:GetCoreObject()
+local LXR = exports['lxr-core']:GetLXR()
+local A = LXRAdmin
+local RES = GetCurrentResourceName()
+local buckets = {}
 
-    ═══════════════════════════════════════════════════════════════════════════════
-    SERVER INFORMATION
-    ═══════════════════════════════════════════════════════════════════════════════
+local function limited(src)
+    local b = buckets[src]
+    local now = GetGameTimer()
+    if not b or now - b.at > Config.Security.rateLimit.windowMs then b = { at = now, n = 0 } buckets[src] = b end
+    b.n = b.n + 1
+    return b.n > Config.Security.rateLimit.burst
+end
+local function has(src) return function(g) return LXRCore.Perms.Has(src, g) end end
+local function may(src, action) return A.Allowed(action, has(src)) end
+local function player(src) return LXRCore.Functions.GetPlayer(src) end
+local function nameOf(P) local c = P.PlayerData.charinfo or {} return ((c.firstname or '') .. ' ' .. (c.lastname or '')):gsub('^%s+', '') end
+local function log(src, action, target, detail)
+    if Config.Debug.log then LXRCore.Log.info('admin', ('%s %s → %s %s'):format(GetPlayerName(src) or src, action, tostring(target or '-'), detail or ''), { source = src }) end
+    LXRCore.Emit('lxr:admin:action', nil, src, action, target, detail)
+end
+local function groupsOf(src)
+    local out = {}
+    for _, g in ipairs(A.Tiers()) do if LXRCore.Perms.Has(src, g) then out[#out + 1] = g end end
+    return out
+end
+local function mine(src)
+    local out = {}
+    for _, a in ipairs(A.Actions()) do out[a] = may(src, a) end
+    return out
+end
 
-    Server:    The Land of Wolves 🐺
-    Developer: iBoss21 / The Lux Empire
-    Website:   https://www.wolves.land
-    Discord:   https://discord.gg/CrKcWdfd3A
-    Store:     https://theluxempire.tebex.io
+local function players()
+    local out = {}
+    for _, id in ipairs(GetPlayers()) do
+        local n = tonumber(id)
+        local P = player(n)
+        local ped = GetPlayerPed(n)
+        local c = ped ~= 0 and GetEntityCoords(ped) or vector3(0, 0, 0)
+        out[#out + 1] = { id = n, account = GetPlayerName(n), name = P and nameOf(P) or '', job = P and P.PlayerData.job.label or '', citizenid = P and P.PlayerData.citizenid or '', ping = GetPlayerPing(n), x = c.x, y = c.y, z = c.z, groups = groupsOf(n) }
+    end
+    table.sort(out, function(a, b) return a.id < b.id end)
+    return out
+end
 
-    ═══════════════════════════════════════════════════════════════════════════════
+local function server()
+    local weather, nextW = nil, nil
+    if GetResourceState('lxr-weather') == 'started' then weather, nextW = exports['lxr-weather']:GetWeather() end
+    local cal = GlobalState.calendar
+    return { players = #GetPlayers(), max = GetConvarInt('sv_maxclients', 32), uptime = math.floor(GetGameTimer() / 60000), weather = weather, nextWeather = nextW, hour = cal and cal.hour, minute = cal and cal.minute, season = cal and cal.season, frozen = cal and cal.frozen }
+end
 
-    © 2026 iBoss21 / The Lux Empire | wolves.land | All Rights Reserved
-]]
-
-local frozen = false
-
-local permissions = Config.Permissions
-
-exports['lxr-core']:AddCommand('admin', 'Open the admin menu (Admin Only)', {}, false, function(source)
-  	local src = source
-  	TriggerClientEvent('admin:client:OpenMenu', src)
-end, 'admin')
-
-exports['lxr-core']:AddCommand('noclip', 'No Clip (Admin Only)', {}, false, function(source)
-	local src = source
-	TriggerClientEvent('admin:client:ToggleNoClip', src)
-end, 'admin')
-
-exports['lxr-core']:AddCommand('setammo', 'Set weapon ammo (Admin Only)', {{name='amount', help='Amount of bullets, for example: 20'}, {name='weapon', help='Name of the weapon, for example: WEAPON_REVOLVER_CATTLEMAN'}}, false, function(source, args)
-  	local src = source
-  	local weapon = args[2] or 'current'
-  	local amount = tonumber(args[1])
-	TriggerClientEvent('admin:client:SetWeaponAmmoManual', src, weapon, amount)
-end, 'admin')
-
-exports['lxr-core']:CreateCallback('admin:server:hasperms', function(source, cb, action)
-	local src = source
-	if exports['lxr-core']:HasPermission(src, permissions[action]) or IsPlayerAceAllowed(src, 'command') then
-		cb(true)
-	else
-		cb(false)
-	end
+LXR.RPC.Register('lxr-admin:open', function(src)
+    if not may(src, 'open') then return false, 'denied' end
+    return true, { players = players(), server = server(), me = mine(src), groups = groupsOf(src), tiers = A.Tiers() }
+end)
+LXR.RPC.Register('lxr-admin:players', function(src)
+    if not may(src, 'players') then return false, 'denied' end
+    return true, players()
+end)
+LXR.RPC.Register('lxr-admin:bans', function(src)
+    if not may(src, 'ban') then return false, 'denied' end
+    local rows = LXRCore.DB.Query('SELECT id, name, reason, expire, bannedby FROM bans ORDER BY id DESC LIMIT 100') or {}
+    return true, rows
 end)
 
-exports['lxr-core']:CreateCallback('admin:server:getplayers', function(source, cb)
-	local src = source
-	local players = {}
-	for k,v in pairs(exports['lxr-core']:GetPlayers()) do
-		local target = GetPlayerPed(v)
-		local ped = exports['lxr-core']:GetPlayer(v)
-		players[#players + 1] = {
-			name = ped.PlayerData.charinfo.firstname .. ' ' .. ped.PlayerData.charinfo.lastname .. ' | (' .. GetPlayerName(v) .. ')',
-			id = v,
-			coords = GetEntityCoords(target),
-			citizenid = ped.PlayerData.citizenid,
-			sources = GetPlayerPed(ped.PlayerData.source),
-			sourceplayer = ped.PlayerData.source
-		}
-  	end
-	table.sort(players, function(a, b)
-    	return a.id < b.id
-  	end)
-  	cb(players)
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 🎯 PLAYER ACTIONS
+-- ═══════════════════════════════════════════════════════════════════════════════
+local actions = {}
+
+actions.go = function(src, T) local ped = GetPlayerPed(T) if ped == 0 then return false, 'gone' end local c = GetEntityCoords(ped) TriggerClientEvent('lxr-admin:client:teleport', src, c.x, c.y, c.z) return true end
+actions.bring = function(src, T) local ped = GetPlayerPed(src) if ped == 0 then return false, 'gone' end local c = GetEntityCoords(ped) TriggerClientEvent('lxr-admin:client:teleport', T, c.x, c.y, c.z) return true end
+actions.freeze = function(src, T, args) TriggerClientEvent('lxr-admin:client:freeze', T, args.on ~= false) return true end
+actions.warn = function(src, T, args) LXRCore.Notify(T, Lang:t('info.warned', { reason = tostring(args.reason or '') }), 'warning', 8000) return true end
+actions.heal = function(src, T) TriggerClientEvent('lxr-admin:client:heal', T) return true end
+actions.revive = function(src, T) if GetResourceState('lxr-doctor') == 'started' then exports['lxr-doctor']:Revive(T) else TriggerClientEvent('lxr-admin:client:heal', T) end return true end
+actions.kick = function(src, T, args) LXRCore.Functions.Kick(T, Lang:t('info.kicked', { reason = tostring(args.reason or ''), by = GetPlayerName(src) })) return true end
+actions.ban = function(src, T, args)
+    local expire = A.Expire(args.hours, os.time())
+    LXRCore.DB.InsertAsync('INSERT INTO bans (name, license, discord, ip, reason, expire, bannedby) VALUES (?, ?, ?, ?, ?, ?, ?)', {
+        GetPlayerName(T), GetPlayerIdentifierByType(T, 'license'), GetPlayerIdentifierByType(T, 'discord'), GetPlayerIdentifierByType(T, 'ip'), tostring(args.reason or ''), expire, GetPlayerName(src) })
+    DropPlayer(T, Lang:t('info.banned', { reason = tostring(args.reason or ''), discord = LXRCore.Brand.discord or '' }))
+    return true
+end
+actions.give = function(src, T, args)
+    local P = player(T)
+    local def = LXRShared.Items[tostring(args.item or ''):lower()]
+    if not P or not def then return false, 'no_item' end
+    local n = math.max(1, math.floor(tonumber(args.amount) or 1))
+    if not P.Functions.AddItem(def.name, n, nil, nil, 'admin:give') then return false, 'too_heavy' end
+    return true
+end
+actions.job = function(src, T, args)
+    local P = player(T)
+    local job = tostring(args.job or ''):lower()
+    if not P or not LXRShared.Jobs[job] then return false, 'no_job' end
+    P.Functions.SetJob(job, tonumber(args.grade) or 0)
+    return true
+end
+actions.money = function(src, T, args)
+    local P = player(T)
+    local account, amount = tostring(args.account or 'cash'), tonumber(args.amount) or 0
+    if not P or not Config.Money.MoneyTypes[account] or amount == 0 then return false, 'no_money' end
+    if amount > 0 then P.Functions.AddMoney(account, amount, 'admin') else P.Functions.RemoveMoney(account, -amount, 'admin') end
+    return true
+end
+
+LXR.RPC.Register('lxr-admin:action', function(src, action, target, args)
+    if limited(src) then return false, 'rate' end
+    local fn = actions[action]
+    if not fn or not may(src, action) then return false, 'denied' end
+    local T = tonumber(target)
+    if not T or not GetPlayerName(T) then return false, 'gone' end
+    args = type(args) == 'table' and args or {}
+    local ok, err = fn(src, T, args)
+    if ok then log(src, action, T, args.reason or args.item or args.job or args.account) end
+    return ok, err
 end)
 
-RegisterNetEvent('admin:server:getPlayersForBlips', function()
-	local src = source
-	local players = {}
-	for k,v in pairs(exports['lxr-core']:GetPlayers()) do
-		local target = GetPlayerPed(v)
-		local ped = exports['lxr-core']:GetPlayer(v)
-		players[#players + 1] = {
-			name = ped.PlayerData.charinfo.firstname .. ' ' .. ped.PlayerData.charinfo.lastname .. ' | ' .. GetPlayerName(v),
-			id = v,
-			coords = GetEntityCoords(target),
-			citizenid = ped.PlayerData.citizenid,
-			sources = GetPlayerPed(ped.PlayerData.source),
-			sourceplayer = ped.PlayerData.source
-		}
-  	end
-  	TriggerClientEvent('admin:client:show', src, players)
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 🌍 SERVER + ME
+-- ═══════════════════════════════════════════════════════════════════════════════
+LXR.RPC.Register('lxr-admin:server', function(src, what, args)
+    if limited(src) then return false, 'rate' end
+    args = type(args) == 'table' and args or {}
+    if what == 'announce' then
+        if not may(src, 'announce') then return false, 'denied' end
+        LXRCore.Notify(-1, tostring(args.text or ''), 'info', 10000)
+    elseif what == 'weather' then
+        if not may(src, 'weather') or GetResourceState('lxr-weather') ~= 'started' then return false, 'denied' end
+        if not exports['lxr-weather']:SetWeather(tostring(args.kind or '')) then return false, 'no_weather' end
+    elseif what == 'time' then
+        if not may(src, 'time') or GetResourceState('lxr-weather') ~= 'started' then return false, 'denied' end
+        if args.freeze ~= nil then exports['lxr-weather']:FreezeTime(args.freeze == true) else exports['lxr-weather']:SetTime(tonumber(args.hour) or 12, tonumber(args.minute) or 0) end
+    else return false, 'denied' end
+    log(src, what, nil, args.text or args.kind or tostring(args.hour or args.freeze))
+    return true, server()
 end)
 
-RegisterNetEvent('admin:server:cloth', function(player)
-	local src = source
-	if exports['lxr-core']:HasPermission(src, permissions['perms']) or IsPlayerAceAllowed(src, 'command') then
-		TriggerClientEvent('lxr-clothing:client:openMenu', player.id,'all')
-	end
+---the client asks before turning a self-tool on; the answer is the permission, and the log line
+LXR.RPC.Register('lxr-admin:me', function(src, tool, on)
+    if limited(src) then return false, 'rate' end
+    if not may(src, tool) then return false, 'denied' end
+    log(src, tool, src, on and 'on' or 'off')
+    return true
 end)
 
-RegisterNetEvent('admin:server:kick', function(player, reason)
-	local src = source
-	if exports['lxr-core']:HasPermission(src, permissions['kick']) or IsPlayerAceAllowed(src, 'command') then
-		TriggerEvent('lxr-log:server:CreateLog', 'bans', 'Player Kicked', 'red', string.format('%s was kicked by %s for %s', GetPlayerName(player.id), GetPlayerName(src), reason), true)
-		DropPlayer(player.id, Lang:t("info.kicked_server") .. ':\n' .. reason .. '\n\n' .. Lang:t("info.check_discord") .. exports['lxr-core']:GetConfig().Discord)
-	end
+LXR.RPC.Register('lxr-admin:unban', function(src, id)
+    if limited(src) or not may(src, 'unban') then return false, 'denied' end
+    LXRCore.DB.Update('DELETE FROM bans WHERE id = ?', { tonumber(id) or 0 })
+    log(src, 'unban', id)
+    return true
 end)
 
-RegisterNetEvent('admin:server:bring', function(player) 
-	local src = source 
-	if exports['lxr-core']:HasPermission(src, permissions['bring']) or IsPlayerAceAllowed(src, 'command') then 
-		local admin = GetPlayerPed(src) 
-		local adminCoords = GetEntityCoords(admin) 
-		local target = GetPlayerPed(player.id) 
-		SetEntityCoords(target, adminCoords) 
-	end
-end)
-
-RegisterNetEvent('admin:server:goto', function(player)
-	local src = source
-	if exports['lxr-core']:HasPermission(src, permissions['goto']) or IsPlayerAceAllowed(src, 'command') then
-		local admin = GetPlayerPed(src)
-		local target = GetPlayerPed(player.id)
-		local targetCoords = GetEntityCoords(target)
-		SetEntityCoords(admin, targetCoords)
-	end
-end)
-
-RegisterNetEvent('admin:server:spectate', function(player)
-	local src = source
-	if exports['lxr-core']:HasPermission(src, permissions['spectate']) or IsPlayerAceAllowed(src, 'command') then
-		local admin = GetPlayerPed(src)
-		local target = GetPlayerPed(player.id)
-		local coords = GetEntityCoords(target) 
-		TriggerClientEvent('admin:client:spectate', src, player.id, coords)
-	end
-end)
-
-RegisterNetEvent('admin:server:freeze', function(player)
-	local src = source
-	if exports['lxr-core']:HasPermission(src, permissions['freeze']) or IsPlayerAceAllowed(src, 'command') then
-		TriggerClientEvent('admin:client:Freeze', player.id)
-	end
-end)
-
-RegisterNetEvent('admin:server:inventory', function(player)
-	local src = source
-	if exports['lxr-core']:HasPermission(src, permissions['perms']) or IsPlayerAceAllowed(src, 'command') then
-		TriggerClientEvent('admin:client:inventory', src, player.id)
-	end
-end)
-
-RegisterNetEvent('admin:server:ban', function(player, time, reason)
-	local src = source
-	if exports['lxr-core']:HasPermission(src, permissions['ban']) or IsPlayerAceAllowed(src, 'command') then
-		local time = tonumber(time)
-		local banTime = tonumber(os.time() + time)
-		if banTime > 2147483647 then
-			banTime = 2147483647
-		end
-		local timeTable = os.date('*t', banTime)
-
-		MySQL.insert.await('INSERT INTO bans (name, license, discord, ip, reason, expire, bannedby) VALUES (?, ?, ?, ?, ?, ?, ?)', {
-			GetPlayerName(player.id),
-			GetPlayerIdentifierByType(player.id, 'license'),
-			GetPlayerIdentifierByType(player.id, 'discord'),
-			GetPlayerIdentifierByType(player.id, 'ip'),
-			reason,
-			banTime,
-			GetPlayerName(src)
-		})
-
-		TriggerClientEvent('chat:addMessage', -1, {
-			template = "<div class=chat-message server'><strong>ANNOUNCEMENT | {0} has been banned:</strong> {1}</div>",
-			args = {GetPlayerName(player.id), reason}
-		})
-
-		TriggerEvent('lxr-log:server:CreateLog', 'bans', 'Player Banned', 'red', string.format('%s was banned by %s for %s', GetPlayerName(player.id), GetPlayerName(src), reason), true)
-		if banTime >= 2147483647 then
-			DropPlayer(player.id, Lang:t("info.banned") .. '\n' .. reason .. Lang:t("info.ban_perm") .. exports['lxr-core']:GetConfig().Discord)
-		else
-			DropPlayer(player.id, Lang:t("info.banned") .. '\n' .. reason .. Lang:t("info.ban_expires") .. timeTable['day'] .. '/' .. timeTable['month'] .. '/' .. timeTable['year'] .. ' ' .. timeTable['hour'] .. ':' .. timeTable['min'] .. '\n🔸 Check our Discordformore information: ' .. exports['lxr-core']:GetConfig().Discord)
-		end
-	end
-end)
+AddEventHandler('playerDropped', function() buckets[source] = nil end)
+CreateThread(function() if Config.Debug.printBanner then print(('^1[lxr-admin]^7 v%s — %d actions, tiers %s'):format(GetResourceMetadata(RES, 'version', 0), #A.Actions(), table.concat(A.Tiers(), ' > '))) end end)
+exports('May', may)
+exports('Players', players)

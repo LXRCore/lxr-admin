@@ -1,76 +1,52 @@
 --[[
-    ██╗     ██╗  ██╗██████╗       █████╗ ██████╗ ███╗   ███╗██╗███╗   ██╗
-    ██║     ╚██╗██╔╝██╔══██╗     ██╔══██╗██╔══██╗████╗ ████║██║████╗  ██║
-    ██║      ╚███╔╝ ██████╔╝     ███████║██║  ██║██╔████╔██║██║██╔██╗ ██║
-    ██║      ██╔██╗ ██╔══██╗     ██╔══██║██║  ██║██║╚██╔╝██║██║██║╚██╗██║
-    ███████╗██╔╝ ██╗██║  ██║     ██║  ██║██████╔╝██║ ╚═╝ ██║██║██║ ╚████║
-    ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝     ╚═╝  ╚═╝╚═════╝ ╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝
+    LXR Core - Admin
 
-                    ███╗   ███╗███████╗███╗   ██╗██╗   ██╗
-                    ████╗ ████║██╔════╝████╗  ██║██║   ██║
-                    ██╔████╔██║█████╗  ██╔██╗ ██║██║   ██║
-                    ██║╚██╔╝██║██╔══╝  ██║╚██╗██║██║   ██║
-                    ██║ ╚═╝ ██║███████╗██║ ╚████║╚██████╔╝
-                    ╚═╝     ╚═╝╚══════╝╚═╝  ╚═══╝ ╚═════╝
+    Brand:       LXRCore — Lux Empire eXperience RedM Core
+    Product:     wolves.land / The Land of Wolves
+    Developer:   iBoss21 / LXRCore
+    Website:     https://www.lxrcore.com
+    Discord:     https://discord.gg/ZHMKVYyhBa (development)
+    GitHub:      https://github.com/LXRCore
 
-    🐺 LXR Admin Menu — Staff & Server Management Panel
-
-    ═══════════════════════════════════════════════════════════════════════════════
-    SERVER INFORMATION
-    ═══════════════════════════════════════════════════════════════════════════════
-
-    Server:    The Land of Wolves 🐺
-    Developer: iBoss21 / The Lux Empire
-    Website:   https://www.wolves.land
-    Discord:   https://discord.gg/CrKcWdfd3A
-    GitHub:    https://github.com/iBoss21
-    Store:     https://theluxempire.tebex.io
-
-    ═══════════════════════════════════════════════════════════════════════════════
+    Version: 3.0.0
+    Performance Target: 0.00 ms idle
 
     Framework Support:
-    - LXR Core (Primary)
-    - RSG Core (Compatible)
-    - VORP Core (Compatible)
+    - LXR Core v3 (Native — GetCoreObject / GetLXR)
 
-    ═══════════════════════════════════════════════════════════════════════════════
-
-    © 2026 iBoss21 / The Lux Empire | wolves.land | All Rights Reserved
+    © 2026 iBoss21 / LXRCore | lxrcore.com | All Rights Reserved
 ]]
 
 fx_version 'cerulean'
-
 game 'rdr3'
-
 rdr3_warning 'I acknowledge that this is a prerelease build of RedM, and I am aware my resources *will* become incompatible once RedM ships.'
+lua54 'yes'
 
-name        'lxr-adminmenu'
-description 'LXR Admin Menu — Staff & Server Management Panel | wolves.land'
-author      'iBoss21 / The Lux Empire (wolves.land)'
-version     '1.0.1'
+name 'lxr-admin'
+author 'iBoss21 / LXRCore'
+description 'LXRCore v3 staff desk: tiered, server-checked, logged actions on players, the server and yourself; the ban book'
+version '3.0.0'
+repository 'https://github.com/LXRCore/lxr-admin'
+
+shared_scripts {
+    'shared/locale.lua',
+    'locales/*.lua',
+    'config.lua',
+    'shared/rules.lua',
+}
+
+client_script 'client/main.lua'
+server_script 'server/main.lua'
 
 ui_page 'html/index.html'
 
-shared_scripts {
-  '@lxr-core/shared/locale.lua',
-  'locales/en.lua',
-  'shared/config.lua'
-}
-
-client_scripts {
-  '@menuv/menuv.lua',
-  'client/main.lua',
-  'client/noclip.lua'
-}
-
 files {
-  'html/index.html',
-  'html/index.js'
+    'html/index.html',
+    'html/lxr-ui.css',
+    'html/style.css',
+    'html/fonts/*.woff2',
+    'html/app.js',
+    'html/img/*.png',
 }
 
-server_scripts {
-  '@oxmysql/lib/MySQL.lua',
-  'server/main.lua'
-}
-
-lua54 'yes'
+dependencies { 'lxr-core' }

@@ -1,1 +1,68 @@
-<script src="index.js"></script>
+<!DOCTYPE html>
+<!-- LXR-ADMIN | LXR UI Kit | © 2026 iBoss21 / LXRCore | lxrcore.com -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Staff desk</title>
+  <link rel="stylesheet" href="lxr-ui.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="lxr">
+  <div id="app" class="lxr-hidden">
+    <header class="ad-top lxr-hit">
+      <div class="ad-brand">
+        <img class="ad-logo" src="img/lxrcore-logo.png" alt="">
+        <div><span class="lxr-mono lxr-t-ash" data-l="kicker"></span><h1 class="lxr-cut ad-title" data-l="title"></h1></div>
+      </div>
+      <div class="ad-hints lxr-mono lxr-t-smoke"><span id="my-groups"></span><span class="lxr-key">Backspace</span><span data-l="hint_close"></span></div>
+    </header>
+
+    <aside class="ad-side lxr-hit">
+      <nav class="ad-nav" id="nav">
+        <button class="ad-nav__item is-on" data-tab="players"><span class="lxr-row-index">01</span><span data-l="tab_players"></span></button>
+        <button class="ad-nav__item" data-tab="server"><span class="lxr-row-index">02</span><span data-l="tab_server"></span></button>
+        <button class="ad-nav__item" data-tab="me"><span class="lxr-row-index">03</span><span data-l="tab_me"></span></button>
+        <button class="ad-nav__item" data-tab="bans"><span class="lxr-row-index">04</span><span data-l="tab_bans"></span></button>
+      </nav>
+      <div class="ad-side__foot lxr-mono lxr-t-smoke"><span id="count"></span></div>
+    </aside>
+
+    <section class="ad-main lxr-hit">
+      <div class="ad-tab" id="tab-players">
+        <div class="ad-main__head lxr-rule-b"><span class="lxr-mono lxr-t-ash" data-l="players_head"></span><span class="lxr-grow"></span><input class="lxr-input ad-search" id="search" placeholder=""><button class="lxr-btn lxr-btn-ghost lxr-btn-sm" id="btn-refresh" data-l="refresh"></button></div>
+        <div class="ad-split">
+          <div class="ad-list" id="players"></div>
+          <div class="ad-card" id="card"><div class="ad-empty lxr-t-smoke" data-l="pick_player"></div></div>
+        </div>
+      </div>
+      <div class="ad-tab lxr-hidden" id="tab-server">
+        <div class="ad-main__head lxr-rule-b"><span class="lxr-mono lxr-t-ash" data-l="server_head"></span></div>
+        <div class="ad-stats" id="stats"></div>
+        <div class="ad-form">
+          <div class="ad-form__row"><span class="lxr-mono lxr-t-smoke" data-l="announce"></span><input class="lxr-input" id="announce-text" maxlength="200"><button class="lxr-btn lxr-btn-sm" data-server="announce" data-l="send"></button></div>
+          <div class="ad-form__row"><span class="lxr-mono lxr-t-smoke" data-l="weather"></span><input class="lxr-input" id="weather-kind" placeholder="sunny · rain · fog · snow…"><button class="lxr-btn lxr-btn-sm" data-server="weather" data-l="set"></button></div>
+          <div class="ad-form__row"><span class="lxr-mono lxr-t-smoke" data-l="time"></span><input class="lxr-input ad-in-sm" id="time-hour" type="number" min="0" max="23" placeholder="h"><input class="lxr-input ad-in-sm" id="time-minute" type="number" min="0" max="59" placeholder="m"><button class="lxr-btn lxr-btn-sm" data-server="time" data-l="set"></button><button class="lxr-btn lxr-btn-ghost lxr-btn-sm" id="btn-freeze" data-l="freeze_time"></button></div>
+        </div>
+      </div>
+      <div class="ad-tab lxr-hidden" id="tab-me">
+        <div class="ad-main__head lxr-rule-b"><span class="lxr-mono lxr-t-ash" data-l="me_head"></span></div>
+        <div class="ad-tools" id="tools">
+          <button class="ad-tool" data-tool="noclip"><span class="lxr-row-index">01</span><span class="ad-tool__name" data-l="noclip"></span><span class="lxr-mono ad-tool__state"></span></button>
+          <button class="ad-tool" data-tool="god"><span class="lxr-row-index">02</span><span class="ad-tool__name" data-l="god"></span><span class="lxr-mono ad-tool__state"></span></button>
+          <button class="ad-tool" data-tool="invisible"><span class="lxr-row-index">03</span><span class="ad-tool__name" data-l="invisible"></span><span class="lxr-mono ad-tool__state"></span></button>
+        </div>
+        <div class="ad-form">
+          <div class="ad-form__row"><span class="lxr-mono lxr-t-smoke" data-l="teleport"></span><button class="lxr-btn lxr-btn-sm" id="btn-waypoint" data-l="to_waypoint"></button><input class="lxr-input ad-in-sm" id="tp-x" placeholder="x"><input class="lxr-input ad-in-sm" id="tp-y" placeholder="y"><input class="lxr-input ad-in-sm" id="tp-z" placeholder="z"><button class="lxr-btn lxr-btn-ghost lxr-btn-sm" id="btn-coords" data-l="go"></button></div>
+        </div>
+      </div>
+      <div class="ad-tab lxr-hidden" id="tab-bans">
+        <div class="ad-main__head lxr-rule-b"><span class="lxr-mono lxr-t-ash" data-l="bans_head"></span><span class="lxr-grow"></span><button class="lxr-btn lxr-btn-ghost lxr-btn-sm" id="btn-bans" data-l="refresh"></button></div>
+        <div class="ad-list" id="bans"></div>
+      </div>
+    </section>
+
+    <footer class="ad-foot lxr-hit"><span class="lxr-grow"></span><button class="lxr-btn lxr-btn-ghost" id="btn-close" data-l="close"></button></footer>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
