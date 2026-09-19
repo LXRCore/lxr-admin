@@ -5,6 +5,7 @@
      ═══════════════════════════════════════════════════════════════════════════ ]]
 
 Locale.Register('en', {
+    command = { id = 'player id', revive = 'Revive a player (or yourself)', heal = 'Heal a player (or yourself)', freeze = 'Freeze a player', unfreeze = 'Unfreeze a player', bring = 'Bring a player to you', ['goto'] = 'Go to a player' },
     error = { rate = 'Slow down.', denied = 'Not yours to do.', gone = 'They are not here.', no_item = 'No such item.', too_heavy = 'They cannot carry that.', no_job = 'No such job.', no_money = 'No such account, or nothing to move.', no_weather = 'No such weather.', no_waypoint = 'Set a waypoint first.' },
     info = { done = 'Done.', warned = 'A warning from staff: %{reason}', kicked = 'Kicked by %{by}: %{reason}', banned = 'Banned: %{reason}\n%{discord}', frozen = 'Staff froze you.', unfrozen = 'You can move.' },
     action = { go = 'Go to', bring = 'Bring', freeze = 'Freeze', unfreeze = 'Unfreeze', heal = 'Heal', revive = 'Revive', warn = 'Warn', kick = 'Kick', ban = 'Ban', give = 'Give item', job = 'Set job', money = 'Money', unban = 'Lift' },

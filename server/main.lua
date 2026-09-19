@@ -159,6 +159,24 @@ LXR.RPC.Register('lxr-admin:unban', function(src, id)
     return true
 end)
 
+-- chat shortcuts for the desk's most used actions: /revive [id], /heal [id], /freeze [id], /bring <id>, /goto <id>
+-- (no id = yourself where that makes sense); the same permission tiers as the panel
+local function quick(cmd, action, selfOk, extra)
+    LXRCore.Commands.Add(cmd, Lang:t('command.' .. cmd), { { name = 'id', help = Lang:t('command.id') } }, false, function(src, args)
+        local T = tonumber(args[1]) or (selfOk and src) or nil
+        if not T or not GetPlayerName(T) then return LXRCore.Notify(src, Lang:t('error.gone'), 'error') end
+        if not may(src, action) then return LXRCore.Notify(src, Lang:t('error.denied'), 'error') end
+        local ok, err = actions[action](src, T, extra or {})
+        if ok then log(src, action, T) LXRCore.Notify(src, Lang:t('info.done'), 'success') else LXRCore.Notify(src, Lang:t('error.' .. tostring(err)), 'error') end
+    end, 'admin')
+end
+quick('revive', 'revive', true)
+quick('heal', 'heal', true)
+quick('freeze', 'freeze', false)
+quick('unfreeze', 'freeze', false, { on = false })
+quick('bring', 'bring', false)
+quick('goto', 'go', false)
+
 AddEventHandler('playerDropped', function() buckets[source] = nil end)
 CreateThread(function() if Config.Debug.printBanner then print(('^1[lxr-admin]^7 v%s — %d actions, tiers %s'):format(GetResourceMetadata(RES, 'version', 0), #A.Actions(), table.concat(A.Tiers(), ' > '))) end end)
 exports('May', may)
