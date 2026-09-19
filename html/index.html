@@ -23,6 +23,7 @@
         <button class="ad-nav__item" data-tab="server"><span class="lxr-row-index">02</span><span data-l="tab_server"></span></button>
         <button class="ad-nav__item" data-tab="me"><span class="lxr-row-index">03</span><span data-l="tab_me"></span></button>
         <button class="ad-nav__item" data-tab="bans"><span class="lxr-row-index">04</span><span data-l="tab_bans"></span></button>
+        <button class="ad-nav__item" data-tab="reports"><span class="lxr-row-index">05</span><span data-l="tab_reports"></span></button>
       </nav>
       <div class="ad-side__foot lxr-mono lxr-t-smoke"><span id="count"></span></div>
     </aside>
@@ -50,10 +51,16 @@
           <button class="ad-tool" data-tool="noclip"><span class="lxr-row-index">01</span><span class="ad-tool__name" data-l="noclip"></span><span class="lxr-mono ad-tool__state"></span></button>
           <button class="ad-tool" data-tool="god"><span class="lxr-row-index">02</span><span class="ad-tool__name" data-l="god"></span><span class="lxr-mono ad-tool__state"></span></button>
           <button class="ad-tool" data-tool="invisible"><span class="lxr-row-index">03</span><span class="ad-tool__name" data-l="invisible"></span><span class="lxr-mono ad-tool__state"></span></button>
+          <button class="ad-tool" data-tool="blips"><span class="lxr-row-index">04</span><span class="ad-tool__name" data-l="blips"></span><span class="lxr-mono ad-tool__state"></span></button>
         </div>
         <div class="ad-form">
           <div class="ad-form__row"><span class="lxr-mono lxr-t-smoke" data-l="teleport"></span><button class="lxr-btn lxr-btn-sm" id="btn-waypoint" data-l="to_waypoint"></button><input class="lxr-input ad-in-sm" id="tp-x" placeholder="x"><input class="lxr-input ad-in-sm" id="tp-y" placeholder="y"><input class="lxr-input ad-in-sm" id="tp-z" placeholder="z"><button class="lxr-btn lxr-btn-ghost lxr-btn-sm" id="btn-coords" data-l="go"></button></div>
         </div>
+      </div>
+      <div class="ad-tab lxr-hidden" id="tab-reports">
+        <div class="ad-main__head lxr-rule-b"><span class="lxr-mono lxr-t-ash" data-l="reports_head"></span><span class="lxr-grow"></span><button class="lxr-btn lxr-btn-ghost lxr-btn-sm" id="btn-reports" data-l="refresh"></button></div>
+        <div class="ad-list" id="reports"></div>
+        <div class="ad-form"><div class="lxr-mono lxr-t-smoke ad-devhint" data-l="dev_hint"></div></div>
       </div>
       <div class="ad-tab lxr-hidden" id="tab-bans">
         <div class="ad-main__head lxr-rule-b"><span class="lxr-mono lxr-t-ash" data-l="bans_head"></span><span class="lxr-grow"></span><button class="lxr-btn lxr-btn-ghost lxr-btn-sm" id="btn-bans" data-l="refresh"></button></div>

@@ -14,6 +14,7 @@
     { id: 'go' }, { id: 'bring' }, { id: 'freeze', args: () => ({ on: true }) }, { id: 'freeze', label: 'unfreeze', args: () => ({ on: false }) },
     { id: 'heal' }, { id: 'revive' }, { id: 'warn', fields: ['reason'] }, { id: 'kick', fields: ['reason'] }, { id: 'ban', fields: ['reason', 'hours'], bad: true },
     { id: 'give', fields: ['item', 'amount'] }, { id: 'job', fields: ['job', 'grade'] }, { id: 'money', fields: ['account', 'amount'] },
+    { id: 'spectate' },
   ];
   function renderPlayers() {
     const q = ($('search').value || '').toLowerCase();
@@ -81,9 +82,29 @@
   function renderTools() {
     document.querySelectorAll('.ad-tool').forEach(b => { const on = !!state.tools[b.dataset.tool]; b.classList.toggle('is-on', on); b.querySelector('.ad-tool__state').textContent = on ? t('ui.on') : t('ui.off'); b.disabled = !state.me[b.dataset.tool]; b.style.opacity = state.me[b.dataset.tool] ? '' : '.35'; });
   }
-  document.querySelectorAll('.ad-tool').forEach(b => b.onclick = async () => { const r = await post('tool', { tool: b.dataset.tool, on: !state.tools[b.dataset.tool] }); if (r.ok) { state.tools[b.dataset.tool] = !state.tools[b.dataset.tool]; renderTools(); } });
+  document.querySelectorAll('.ad-tool').forEach(b => b.onclick = async () => { const name = b.dataset.tool === 'blips' ? 'blips' : 'tool'; const r = await post(name, { tool: b.dataset.tool, on: !state.tools[b.dataset.tool] }); if (r.ok) { state.tools[b.dataset.tool] = !state.tools[b.dataset.tool]; renderTools(); } });
   $('btn-waypoint').onclick = () => post('teleport', { waypoint: true });
   $('btn-coords').onclick = () => post('teleport', { x: Number($('tp-x').value), y: Number($('tp-y').value), z: Number($('tp-z').value) });
+
+  // reports
+  async function loadReports(what, id) { const r = await post('reports', { what: what || 'list', id }); state.reports = r.ok ? (r.reports || []) : []; renderReports(); }
+  function renderReports() {
+    const list = $('reports'); list.innerHTML = '';
+    const open = (state.reports || []).filter(r => r.open), done = (state.reports || []).filter(r => !r.open);
+    if (!open.length && !done.length) { list.appendChild(el('div', 'ad-empty lxr-t-smoke', t('ui.no_reports'))); return; }
+    [...open, ...done].forEach((r, i) => {
+      const row = el('div', 'lxr-row' + (r.open ? '' : ' is-dim'));
+      const ago = Math.max(0, Math.round((Date.now() / 1000 - r.at) / 60));
+      row.append(el('span', 'lxr-row-index', String(i + 1).padStart(2, '0')), el('span', 'lxr-row-name', `${r.name} · #${r.from}`), el('span', 'lxr-row-sub', `${r.text} · ${ago} min${r.open ? '' : ' · ' + t('ui.closed_by') + ' ' + (r.by || '')}`));
+      if (r.open) {
+        const go = el('button', 'lxr-btn lxr-btn-ghost lxr-btn-sm', t('action.go')); go.onclick = (e) => { e.stopPropagation(); post('goto', { x: r.x, y: r.y, z: r.z }); };
+        const cl = el('button', 'lxr-btn lxr-btn-sm', t('ui.close_report')); cl.onclick = (e) => { e.stopPropagation(); loadReports('close', r.id); };
+        row.append(go, cl);
+      }
+      list.appendChild(row);
+    });
+  }
+  $('btn-reports').onclick = () => loadReports('list');
 
   // bans
   async function loadBans() { const r = await post('bans'); state.bans = r.ok ? (r.bans || []) : []; renderBans(); }
@@ -100,7 +121,7 @@
   }
 
   // tabs + shell
-  function tab(name) { document.querySelectorAll('.ad-nav__item').forEach(b => b.classList.toggle('is-on', b.dataset.tab === name)); document.querySelectorAll('.ad-tab').forEach(s => s.classList.toggle('lxr-hidden', s.id !== 'tab-' + name)); if (name === 'bans') loadBans(); if (name === 'server') renderServer(); if (name === 'me') renderTools(); }
+  function tab(name) { document.querySelectorAll('.ad-nav__item').forEach(b => b.classList.toggle('is-on', b.dataset.tab === name)); document.querySelectorAll('.ad-tab').forEach(s => s.classList.toggle('lxr-hidden', s.id !== 'tab-' + name)); if (name === 'bans') loadBans(); if (name === 'reports') loadReports('list'); if (name === 'server') renderServer(); if (name === 'me') renderTools(); }
   document.querySelectorAll('.ad-nav__item').forEach(b => b.onclick = () => tab(b.dataset.tab));
   $('btn-refresh').onclick = refresh; $('btn-bans').onclick = loadBans; $('btn-close').onclick = () => post('close');
   $('search').addEventListener('input', renderPlayers);
@@ -115,6 +136,7 @@
     if (m.action === 'open') { const p = m.payload || {}; state.players = p.players || []; state.server = p.server || {}; state.me = p.me || {}; state.groups = p.groups || []; state.pick = null; $('my-groups').textContent = state.groups.join(' · '); renderPlayers(); renderCard(); renderServer(); renderTools(); tab('players'); app.classList.remove('lxr-hidden'); }
     if (m.action === 'tools') renderTools();
     if (m.action === 'close') app.classList.add('lxr-hidden');
+    if (m.action === 'clipboard' && navigator.clipboard) navigator.clipboard.writeText(m.text || '').catch(() => {});
   });
   if (window.__LXR_MOCK__) window.postMessage(window.__LXR_MOCK__, '*');
 })();

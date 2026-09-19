@@ -152,6 +152,86 @@ LXR.RPC.Register('lxr-admin:me', function(src, tool, on)
     return true
 end)
 
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 📣 REPORTS — /report <text>: staff hear it, the desk lists it
+-- ═══════════════════════════════════════════════════════════════════════════════
+local reports, reportSeq, lastReport = {}, 0, {}
+local function staffOnline(tier)
+    local out = {}
+    for _, id in ipairs(GetPlayers()) do local n = tonumber(id) if A.Allowed('reports', has(n)) then out[#out + 1] = n end end
+    return out
+end
+LXRCore.Commands.Add('report', Lang:t('command.report'), { { name = 'text', help = Lang:t('command.report_text') } }, true, function(src, args)
+    local text = table.concat(args, ' '):gsub('[%c<>]', ''):sub(1, 200)
+    if text == '' then return end
+    local now = os.time()
+    if lastReport[src] and now - lastReport[src] < (Config.Reports.cooldownSeconds or 60) then return LXRCore.Notify(src, Lang:t('error.report_wait'), 'error') end
+    lastReport[src] = now
+    reportSeq = reportSeq + 1
+    local P = player(src)
+    local ped = GetPlayerPed(src)
+    local c = ped ~= 0 and GetEntityCoords(ped) or vector3(0, 0, 0)
+    local r = { id = reportSeq, from = src, name = P and nameOf(P) or GetPlayerName(src), account = GetPlayerName(src), text = text, x = c.x, y = c.y, z = c.z, at = now, open = true }
+    table.insert(reports, 1, r)
+    while #reports > (Config.Reports.keep or 50) do table.remove(reports) end
+    for _, s in ipairs(staffOnline()) do LXRCore.Notify(s, Lang:t('info.report_in', { name = r.name, id = src, text = text }), 'warning', 9000) end
+    LXRCore.Notify(src, Lang:t('info.report_sent'), 'success')
+    LXRCore.Log.info('admin', ('report from %s: %s'):format(r.name, text), { source = src })
+    LXRCore.Emit('lxr:admin:report', nil, r)
+end, 'user')
+LXR.RPC.Register('lxr-admin:reports', function(src, what, id)
+    if limited(src) or not may(src, 'reports') then return false, 'denied' end
+    if what == 'close' then
+        for _, r in ipairs(reports) do if r.id == tonumber(id) then r.open = false r.by = GetPlayerName(src) end end
+        log(src, 'report closed', id)
+    end
+    return true, reports
+end)
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 🗺️ STAFF BLIPS — positions of everyone, fed to the staff who switched them on
+-- ═══════════════════════════════════════════════════════════════════════════════
+local blipsOn = {}
+LXR.RPC.Register('lxr-admin:blips', function(src, on)
+    if limited(src) or not may(src, 'blips') then return false, 'denied' end
+    blipsOn[src] = on == true or nil
+    if not on then TriggerClientEvent('lxr-admin:client:blips', src, {}) end
+    log(src, 'blips', src, on and 'on' or 'off')
+    return true
+end)
+CreateThread(function()
+    while true do
+        Wait(Config.Blips.everyMs or 5000)
+        if next(blipsOn) then
+            local list = {}
+            for _, id in ipairs(GetPlayers()) do
+                local n = tonumber(id)
+                local ped = GetPlayerPed(n)
+                if ped ~= 0 then
+                    local c = GetEntityCoords(ped)
+                    local P = player(n)
+                    list[#list + 1] = { id = n, name = P and nameOf(P) or GetPlayerName(n), x = c.x, y = c.y, z = c.z }
+                end
+            end
+            for s in pairs(blipsOn) do if GetPlayerName(s) then TriggerClientEvent('lxr-admin:client:blips', s, list) else blipsOn[s] = nil end end
+        end
+    end
+end)
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 👁️ SPECTATE · 🗑️ DELETE — the client does the work after the server said yes
+-- ═══════════════════════════════════════════════════════════════════════════════
+actions.spectate = function(src, T) TriggerClientEvent('lxr-admin:client:spectate', src, T) return true end
+LXR.RPC.Register('lxr-admin:delete', function(src, netId)
+    if limited(src) or not may(src, 'delete') then return false, 'denied' end
+    local ent = NetworkGetEntityFromNetworkId(tonumber(netId) or 0)
+    if not ent or ent == 0 or not DoesEntityExist(ent) then return false, 'gone' end
+    if IsPedAPlayer(ent) then return false, 'denied' end
+    DeleteEntity(ent)
+    log(src, 'delete', netId)
+    return true
+end)
+
 LXR.RPC.Register('lxr-admin:unban', function(src, id)
     if limited(src) or not may(src, 'unban') then return false, 'denied' end
     LXRCore.DB.Update('DELETE FROM bans WHERE id = ?', { tonumber(id) or 0 })
@@ -185,7 +265,7 @@ LXRCore.Commands.Add('whoami', Lang:t('command.whoami'), {}, false, function(src
     LXRCore.Log.info('admin', ('whoami %s: tier %s, %s'):format(GetPlayerName(src) or src, tier, table.concat(ids, ' ')), { source = src })
 end, 'user')
 
-AddEventHandler('playerDropped', function() buckets[source] = nil end)
+AddEventHandler('playerDropped', function() buckets[source] = nil blipsOn[source] = nil lastReport[source] = nil end)
 CreateThread(function() if Config.Debug.printBanner then print(('^1[lxr-admin]^7 v%s — %d actions, tiers %s'):format(GetResourceMetadata(RES, 'version', 0), #A.Actions(), table.concat(A.Tiers(), ' > '))) end end)
 exports('May', may)
 exports('Players', players)

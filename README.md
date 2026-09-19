@@ -20,6 +20,8 @@ logged with who did what to whom.
   waypoint or to coordinates. Each switch is confirmed and logged by the
   server first and mirrored in `Player(src).state.staff_<tool>` so
   lxr-warden does not strike staff for it.
+* **Spectate · blips · reports** — watch a player through a camera (Backspace ends it); blips of everyone while switched on; `/report <text>` reaches the staff on line and the Reports tab (go there, mark handled).
+* **Developer tools** — `/coords` (copied to the clipboard), `/entity` names what the crosshair sees, `/delent` removes it, `/ids` shows server ids overhead.
 * **Ban book** — the core's `bans` table, newest first; lift a ban.
 * **Tiers** — `Config.Access` maps every action to a group from
   `Config.Server.permissions`; a tier includes every group above it.

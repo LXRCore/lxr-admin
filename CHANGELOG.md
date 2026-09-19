@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.0.0 — 2026-09-19
+* Spectate (a camera on the other player, Backspace ends it), staff blips of everyone on the map (server-fed while on), `/report <text>` with a cooldown → staff toasts and a Reports tab (go there, handled), developer tools: `/coords` (copied), `/entity` under the crosshair, `/delent`, `/ids` overhead. Tiers in `Config.Access` (spectate, blips, reports, devtools, delete).
 * LXRCore v3 release line: every resource ships as 3.0.0 from here (the entries below are the road to it).
 
 ## 3.0.1 — 2026-09-19

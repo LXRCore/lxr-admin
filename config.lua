@@ -45,7 +45,10 @@ Config.Access = {
     ban       = 'admin', unban = 'admin', give = 'admin', job = 'admin', money = 'admin',
     announce  = 'mod', weather = 'admin', time = 'admin',
     noclip    = 'mod', god = 'admin', invisible = 'admin', teleport = 'helper',
+    spectate  = 'mod', blips = 'mod', reports = 'helper', devtools = 'developer', delete = 'admin',
 }
+Config.Reports = { cooldownSeconds = 60, keep = 50, notifyTier = 'helper' }   -- /report: who hears it, how often a player may send one
+Config.Blips = { everyMs = 5000, sprite = 'blip_ambient_companion', scale = 0.6 }   -- staff blips of every player (server-fed, only while on)
 
 Config.Command = { name = 'admin', key = 'F10' }
 Config.Ban = { maxHours = 24 * 365, permanentHours = 0 }
