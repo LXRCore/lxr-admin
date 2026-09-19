@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.0.0 — 2026-09-19
+* LXRCore v3 release line: every resource ships as 3.0.0 from here (the entries below are the road to it).
+
 ## 3.0.1 — 2026-09-19
 * `/whoami` (anyone): your staff tier in a notification, identifiers in the server log — the first thing to run when a staff command is denied.
 
