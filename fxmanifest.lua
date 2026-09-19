@@ -25,7 +25,7 @@ lua54 'yes'
 name 'lxr-admin'
 author 'iBoss21 / LXRCore'
 description 'LXRCore v3 staff desk: tiered, server-checked, logged actions on players, the server and yourself; the ban book'
-version '3.0.0'
+version '3.0.1'
 repository 'https://github.com/LXRCore/lxr-admin'
 
 shared_scripts {

@@ -176,6 +176,14 @@ quick('freeze', 'freeze', false)
 quick('unfreeze', 'freeze', false, { on = false })
 quick('bring', 'bring', false)
 quick('goto', 'go', false)
+-- /whoami — your tier and identifiers, for anyone (the answer to "why is /revive denied")
+LXRCore.Commands.Add('whoami', Lang:t('command.whoami'), {}, false, function(src)
+    local ids = {}
+    for _, id in ipairs(GetPlayerIdentifiers(src)) do if not id:find('^ip:') then ids[#ids + 1] = id end end
+    local tier = LXRCore.Perms.Group(src)
+    LXRCore.Notify(src, Lang:t('info.whoami', { tier = tier }), tier == 'user' and 'error' or 'success', 8000)
+    LXRCore.Log.info('admin', ('whoami %s: tier %s, %s'):format(GetPlayerName(src) or src, tier, table.concat(ids, ' ')), { source = src })
+end, 'user')
 
 AddEventHandler('playerDropped', function() buckets[source] = nil end)
 CreateThread(function() if Config.Debug.printBanner then print(('^1[lxr-admin]^7 v%s — %d actions, tiers %s'):format(GetResourceMetadata(RES, 'version', 0), #A.Actions(), table.concat(A.Tiers(), ' > '))) end end)
